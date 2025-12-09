@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Palette Picker</title>
+    <style>
+        
+        :root {
+            --pixel-size: 20px;
+            --canvas-width: 10;
+            --canvas-height: 10;
+        }
+
+        body {
+            font-family: 'Courier New', monospace; 
+            background-color: #1e1e1e; 
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            color: #aaffaa; 
+            text-shadow: 0 0 10px rgba(170, 255, 170, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            margin-top: 20px;
+            padding: 30px;
+            background-color: #2b2b2b;
+            border: 2px solid #555;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+    
+        .palette-controls {
+            flex-shrink: 0;
+            width: 250px;
+        }
+
+        #palette-display {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .color-swatch {
+            height: 30px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            cursor: pointer; 
+            transition: transform 0.1s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+        }
+        
+     
+        .color-swatch.selected {
+            border: 3px solid white;
+            box-shadow: 0 0 15px #aaffaa;
+        }
+
+        button {
+            background-color: #aaffaa;
+            color: #1e1e1e;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            border-radius: 4px;
+            transition: background-color 0.2s, transform 0.1s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #88ee88;
+            transform: translateY(-1px);
+        }
+
+        
+        .canvas-container {
+            background-color: #383838;
+            border: 4px solid #aaffaa; 
+            border-radius: 4px;
+            display: grid;
+            grid-template-columns: repeat(var(--canvas-width), var(--pixel-size));
+            grid-template-rows: repeat(var(--canvas-height), var(--pixel-size));
+        }
+
+        .pixel {
+            width: var(--pixel-size);
+            height: var(--pixel-size);
+            background-color: #1e1e1e; 
+            border: 1px solid #444;
+            box-sizing: border-box;
+            cursor: crosshair;
+        }
+        
+        .footer-nav {
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        .footer-nav a {
+            color: #aaffaa;
+            text-decoration: none;
+        }
+        .footer-nav a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+
+    <a id="top"></a>
+    <h1>Pixel Palette Picker 🎨</h1>
+    <p>Generate a cohesive 5-color palette, select a color, and draw on the canvas!</p>
+
+    <div class="container">
+        <div class="palette-controls">
+            <h2>Current Palette</h2>
+            <div id="palette-display">
+                </div>
+            
+            <button id="generate-palette-btn">Generate New Palette</button>
+            <button id="clear-canvas-btn">Clear Canvas</button>
+        </div>
+
+        <div id="pixel-canvas" class="canvas-container">
+            </div>
+    </div>
+
+    <div class="footer-nav">
+        <a href="college_football.html">⬅️ Back to College Football Page</a>
+    </div>
+
+    <script>
+      
+        
+        const paletteDisplay = document.getElementById('palette-display');
+        const generateBtn = document.getElementById('generate-palette-btn');
+        const clearBtn = document.getElementById('clear-canvas-btn');
+        const pixelCanvas = document.getElementById('pixel-canvas');
+        
+        let currentPalette = [];
+        let selectedColor = '#1e1e1e'; 
+        let isDrawing = false;
+        function getRandomPrimaryColor() {
+            const h = Math.floor(Math.random() * 360); 
+            const s = Math.floor(Math.random() * 30) + 70;
+            const l = Math.floor(Math.random() * 20) + 30; 
+            return { h, s, l };
+        }
+
+        function hslToString({ h, s, l }) {
+            return `hsl(${h}, ${s}%, ${l}%)`;
+        }
+
+        function generatePalette() {
+            const primary = getRandomPrimaryColor();
+            const p_h = primary.h;
+            const h2 = (p_h + 180) % 360; 
+            const h3 = (p_h + 150) % 360; 
+            const h4 = (p_h + 210) % 360; 
+            const accent = { 
+                h: p_h, 
+                s: primary.s, 
+                l: (primary.l + 30) % 100 
+            };
+
+            currentPalette = [
+                hslToString(primary),
+                hslToString({ h: h2, s: 70, l: 60 }),
+                hslToString({ h: h3, s: 80, l: 45 }),
+                hslToString({ h: h4, s: 80, l: 45 }),
+                hslToString(accent)
+            ];
+            
+            renderPalette();
+        }
+
+        function renderPalette() {
+            paletteDisplay.innerHTML = ''; 
+            currentPalette.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color;
+                swatch.style.color = getContrastColor(color);
+                swatch.textContent = color;
+                swatch.dataset.color = color;
+                
+                swatch.addEventListener('click', () => selectColor(color, swatch));
+                
+                paletteDisplay.appendChild(swatch);
+            });
+            selectColor(currentPalette[0], paletteDisplay.firstChild);
+        }
+
+        function selectColor(color, swatchElement) {
+            selectedColor = color;
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                s.classList.remove('selected');
+            });
+            if (swatchElement) {
+                swatchElement.classList.add('selected');
+            }
+        }
+        
+        function getContrastColor(hsl) {
+            const lMatch = hsl.match(/, (\d+)%\)/);
+            if (lMatch) {
+                const lightness = parseInt(lMatch[1]);
+                return lightness > 60 ? '#1e1e1e' : '#ffffff'; dark
+            }
+            return '#ffffff';
+        }
+
+        function initCanvas() {
+            const width = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-width'));
+            const height = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--canvas-height'));
+
+            for (let i = 0; i < width * height; i++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'pixel';
+                pixelCanvas.appendChild(pixel);
+            }
+
+            pixelCanvas.addEventListener('mousedown', startDrawing);
+            pixelCanvas.addEventListener('mouseup', stopDrawing);
+            pixelCanvas.addEventListener('mouseleave', stopDrawing);
+            pixelCanvas.addEventListener('mouseover', draw);
+        }
+
+        function startDrawing(e) {
+            if (e.target.classList.contains('pixel')) {
+                isDrawing = true;
+                e.target.style.backgroundColor = selectedColor;
+                e.preventDefault(); 
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function draw(e) {
+            if (isDrawing && e.target.classList.contains('pixel')) {
+                if (e.buttons === 1) { 
+                    e.target.style.backgroundColor = selectedColor;
+                }
+            }
+        }
+
+        function clearCanvas() {
+            document.querySelectorAll('.pixel').forEach(pixel => {
+                pixel.style.backgroundColor = '#1e1e1e'; 
+            });
+        }
+
+        generateBtn.addEventListener('click', generatePalette);
+        clearBtn.addEventListener('click', clearCanvas);
+        initCanvas();
+        generatePalette();
+
+    </script>
+</body>
+</html>
